@@ -3,18 +3,15 @@
 import socket, sys, signal, errno, time
 import struct
 import pygame
+from gamestate import gamestate
 
 class gameserver:
     def __init__( self ):
+        self.gamestate = gamestate()
         self.runServerLoop = True
-        self.connection = None
+        self.connections = []
         self.clock = pygame.time.Clock()
         self.receivedstate = ( -1, False, False, False, False )
-        self.player1x = 100
-        self.player1y = 100
-        self.playerspeed = 1
-        self.clientaddress = ( "", 0 )
-        self.lasttick = 0
         signal.signal( signal.SIGTERM, self.handler )
         signal.signal( signal.SIGINT, self.handler )
         try:
@@ -55,10 +52,9 @@ class gameserver:
             try:
                 self.receivedstate, self.clientaddress = \
                     self.serversocket.recvfrom( 256 )
-                self.receivedstate = struct.unpack( 'i????',
-                    self.receivedstate )
             except: pass
-            if self.receivedstate is not None: self.updateplayer()
+            if self.receivedstate is not None:
+                self.handlepacket( self.clientaddress, self.receivedstate )
             try:
                 self.serversocket.sendto( struct.pack( 'iff',
                     pygame.time.get_ticks(), self.player1x, self.player1y ), self.clientaddress )
