@@ -12,7 +12,6 @@ class Gamestate:
         self.players.append( Player( address ))
 
     def handle_packet( self, address, packet ):
-        print "received a packet from " + str( address )
         if address not in self.connections and address is not None:
             self.add_player( address )
             self.connections.append( address )

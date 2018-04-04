@@ -51,7 +51,6 @@ class game:
         if len( state ) % 12 != 0:
             return
         n = 12
-        print str( len( [state[i:i + n] for i in range(0, len(state), n)] )) + " players"
         for key, value in enumerate( \
             [state[i:i + n] for i in range(0, len(state), n)] ):
             this_state = struct.unpack( 'iff', value )
@@ -64,7 +63,6 @@ class game:
                 self.players.append( Player( str( key + 1 )))
             self.players[key].x_position = this_state[1]
             self.players[key].y_position = this_state[2]
-            print "finished updating player %s" % str( key + 1 )
 
     def loop(self):
         while not self.quit:
