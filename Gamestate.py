@@ -12,16 +12,13 @@ class Gamestate:
         self.players.append( Player( address ))
 
     def handle_packet( self, address, packet ):
+        print "received a packet from " + str( address )
         if address not in self.connections and address is not None:
             self.add_player( address )
             self.connections.append( address )
             print "player %s joined" % str( address )
         state = struct.unpack( 'i????', packet )
         lasttick = state[0]
-        up = state[1]
-        down = state[2]
-        left = state[3]
-        right = state[4]
         for player in self.players:
             if player.address == address and lasttick > player.lasttick:
                 player.lasttick = lasttick

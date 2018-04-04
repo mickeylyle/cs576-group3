@@ -47,20 +47,24 @@ class game:
         if key == pygame.K_q or key == pygame.K_ESCAPE:
             pygame.event.post( pygame.event.Event( pygame.QUIT ))
         
-    def updatestate( self ):
-        if len( self.receivedstate ) % 12 != 0:
+    def updatestate( self, state ):
+        if len( state ) % 12 != 0:
             return
-        i = 0
-        while len( self.receivedstate ) > 0:
-            state = struct.unpack( 'iff', self.receivedstate[:12] )
-            self.receivedstate = self.receivedstate[12:]
-            if state[0] <= self.lasttick: return
-            self.lasttick = state[0]
-            if len( self.players ) < i + 1:
-                self.players.append( Player( 'foo' ))
-            self.players[i].x_position = state[1]
-            self.players[i].y_position = state[2]
-            i += 1
+        n = 12
+        print str( len( [state[i:i + n] for i in range(0, len(state), n)] )) + " players"
+        for key, value in enumerate( \
+            [state[i:i + n] for i in range(0, len(state), n)] ):
+            this_state = struct.unpack( 'iff', value )
+            if this_state[0] < self.lasttick:
+                print "ignoring old tick"
+                continue
+            self.lasttick = this_state[0]
+            if len( self.players ) < key + 1:
+                print "adding player %s" % str( key + 1 )
+                self.players.append( Player( str( key + 1 )))
+            self.players[key].x_position = this_state[1]
+            self.players[key].y_position = this_state[2]
+            print "finished updating player %s" % str( key + 1 )
 
     def loop(self):
         while not self.quit:
@@ -77,7 +81,7 @@ class game:
             except socket.error, e:
                 if e.args[0] == errno.EWOULDBLOCK: pass
                 else: print "Socket Error: %s" % e
-            self.updatestate()
+            self.updatestate( self.receivedstate )
             self.draw()
         pygame.quit()
         sys.exit()
