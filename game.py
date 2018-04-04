@@ -5,6 +5,7 @@ import sys
 import socket
 import struct
 import errno
+from Player import Player
 
 class game:
     def __init__( self ):
@@ -14,12 +15,11 @@ class game:
         self.clock = pygame.time.Clock()
         self.lasttick = -1
         self.serveraddress = ( "localhost", 6112 )
-        self.receivedstate = struct.pack( 'iff', -1, 100, 100 )
+        self.receivedstate = ""
         self.screen = pygame.display.set_mode(( self.SCREEN_WIDTH, self.SCREEN_HEIGHT ))
         self.ballimage = pygame.image.load( "ball.gif" )
-        self.player1x = 0
-        self.player1y = 0
-        self.keystate = struct.pack( 'i????', -1, False, False, False, False )
+        self.players = []
+        self.keystate = ""
         try:
             self.clientsocket = socket.socket( socket.AF_INET,
                                                socket.SOCK_DGRAM )
@@ -30,7 +30,9 @@ class game:
 
     def draw( self ):
         self.screen.fill(( 0, 0, 0 ))
-        self.screen.blit( self.ballimage, ( self.player1x, self.player1y ))
+        for player in self.players:
+            self.screen.blit( self.ballimage, ( player.x_position,
+                                                player.y_position ))
         pygame.display.flip()
         
     def handle_input( self, buttons ):
@@ -46,12 +48,19 @@ class game:
             pygame.event.post( pygame.event.Event( pygame.QUIT ))
         
     def updatestate( self ):
-        self.receivedstate = struct.unpack( 'iff', self.receivedstate )
-        if self.receivedstate[0] <= self.lasttick:
+        if len( self.receivedstate ) % 12 != 0:
             return
-        self.lasttick = self.receivedstate[0]
-        self.player1x = self.receivedstate[1]
-        self.player1y = self.receivedstate[2]
+        i = 0
+        while len( self.receivedstate ) > 0:
+            state = struct.unpack( 'iff', self.receivedstate[:12] )
+            self.receivedstate = self.receivedstate[12:]
+            if state[0] <= self.lasttick: return
+            self.lasttick = state[0]
+            if len( self.players ) < i + 1:
+                self.players.append( Player( 'foo' ))
+            self.players[i].x_position = state[1]
+            self.players[i].y_position = state[2]
+            i += 1
 
     def loop(self):
         while not self.quit:
@@ -63,10 +72,11 @@ class game:
             self.handle_input( pygame.key.get_pressed() )
             self.clientsocket.sendto( self.keystate, self.serveraddress )
             try:
-                self.receivedstate, self.serveraddress = self.clientsocket.recvfrom( 256 )
+                self.receivedstate, self.serveraddress = \
+                    self.clientsocket.recvfrom( 256 )
             except socket.error, e:
                 if e.args[0] == errno.EWOULDBLOCK: pass
-            except: pass
+                else: print "Socket Error: %s" % e
             self.updatestate()
             self.draw()
         pygame.quit()

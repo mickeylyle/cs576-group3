@@ -3,15 +3,15 @@
 import socket, sys, signal, errno, time
 import struct
 import pygame
-from gamestate import gamestate
+from Gamestate import Gamestate
+from Player import Player
 
 class gameserver:
     def __init__( self ):
-        self.gamestate = gamestate()
+        self.gamestate = Gamestate()
         self.runServerLoop = True
-        self.connections = []
         self.clock = pygame.time.Clock()
-        self.receivedstate = ( -1, False, False, False, False )
+        self.receivedstate = None
         signal.signal( signal.SIGTERM, self.handler )
         signal.signal( signal.SIGINT, self.handler )
         try:
@@ -30,15 +30,6 @@ class gameserver:
     def handler( self, signum, frame ):
         self.runServerLoop = False
 
-    def updateplayer( self ):
-        if self.receivedstate[0] <= self.lasttick:
-            return
-        self.lasttick = self.receivedstate[0]
-        if self.receivedstate[1]: self.player1y -= self.playerspeed
-        if self.receivedstate[2]: self.player1y += self.playerspeed
-        if self.receivedstate[3]: self.player1x -= self.playerspeed
-        if self.receivedstate[4]: self.player1x += self.playerspeed
-                
     def printusage( self ):
         print "Usage: server.py [address] [port]"
         print "  [address] is the adddress the server binds to, usually localhost"
@@ -49,16 +40,19 @@ class gameserver:
     def loop( self ):
         while self.runServerLoop:
             self.clock.tick( 60 )
+            self.clientaddress = None
             try:
                 self.receivedstate, self.clientaddress = \
                     self.serversocket.recvfrom( 256 )
             except: pass
             if self.receivedstate is not None:
-                self.handlepacket( self.clientaddress, self.receivedstate )
-            try:
-                self.serversocket.sendto( struct.pack( 'iff',
-                    pygame.time.get_ticks(), self.player1x, self.player1y ), self.clientaddress )
-            except: pass
+                self.gamestate.handle_packet( self.clientaddress,
+                                              self.receivedstate )
+            for connection in self.gamestate.connections:
+                try:
+                    self.serversocket.sendto( self.gamestate.make_packet(
+                        pygame.time.get_ticks() ), connection )
+                except: pass
 
 def main():
     pygame.init()
