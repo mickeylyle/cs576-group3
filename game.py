@@ -14,7 +14,7 @@ class game:
         self.quit = False
         self.clock = pygame.time.Clock()
         self.lasttick = -1
-        self.serveraddress = ( "localhost", 6112 )
+        self.serveraddress = ( "192.168.1.106", 6112 )
         self.receivedstate = ""
         self.screen = pygame.display.set_mode(( self.SCREEN_WIDTH, self.SCREEN_HEIGHT ))
         self.ballimage = pygame.image.load( "ball.gif" )

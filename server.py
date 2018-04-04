@@ -41,13 +41,16 @@ class gameserver:
         while self.runServerLoop:
             self.clock.tick( 60 )
             self.clientaddress = None
-            try:
-                self.receivedstate, self.clientaddress = \
-                    self.serversocket.recvfrom( 256 )
-            except: pass
-            if self.receivedstate is not None:
-                self.gamestate.handle_packet( self.clientaddress,
-                                              self.receivedstate )
+            while True:
+                try:
+                    self.receivedstate, self.clientaddress = \
+                        self.serversocket.recvfrom( 256 )
+                except socket.error, e:
+                    if e.args[0] == errno.EWOULDBLOCK: break
+                    else: print "Socket Error: %s" % e
+                if self.receivedstate is not None:
+                    self.gamestate.handle_packet( self.clientaddress,
+                                                  self.receivedstate )
             for connection in self.gamestate.connections:
                 try:
                     self.serversocket.sendto( self.gamestate.make_packet(
