@@ -4,31 +4,29 @@ from Player import Player
 class Gamestate:
     def __init__( self ):
         self.lasttick = 0
-        self.player_speed = 1
         self.players = []
-        self.connections = []
 
-    def add_player( self, address ):
-        self.players.append( Player( address ))
+    def add_player( self, number ):
+        self.players.append( Player( number, None ))
 
-    def handle_packet( self, address, packet ):
-        if address not in self.connections and address is not None:
-            self.add_player( address )
-            self.connections.append( address )
-            print "player %s joined" % str( address )
-        state = struct.unpack( 'i????', packet )
-        lasttick = state[0]
+    def del_player( self, number ):
         for player in self.players:
-            if player.address == address and lasttick > player.lasttick:
-                player.lasttick = lasttick
-                if state[1]: player.y_position -= self.player_speed
-                if state[2]: player.y_position += self.player_speed
-                if state[3]: player.x_position -= self.player_speed
-                if state[4]: player.x_position += self.player_speed
+            if number == player.number:
+                self.players.remove( player )
 
-    def make_packet( self, tick ):
-        packet = ""
+    def handle_worldstate( self, packet ):
+        n = Player.packet_size()
+        if len( packet ) % n != 0: return
+        for player in self.players: player.valid = False
+        for key, value in enumerate( \
+            [packet[i:i + n] for i in range(0, len( packet ), n )] ):
+            handled = False
+            for player in self.players:
+                handled = player.handle_packet( value ) or handled
+            if not handled:
+                number = struct.unpack( Player.packet_format, value )[0]
+                self.add_player( number )
+                for player in self.players: player.handle_packet( value )
         for player in self.players:
-            packet += struct.pack( 'iff', tick, player.x_position,
-                player.y_position )
-        return packet
+            if player.valid == False:
+                self.del_player( player.number )
