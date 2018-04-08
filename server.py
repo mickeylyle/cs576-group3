@@ -52,10 +52,9 @@ class gameserver:
                 if self.receivedstate is not None:
                     self.state.handle_keystate( self.clientaddress,
                                                   self.receivedstate )
+            worldstate = self.state.make_packet( pygame.time.get_ticks() )
             for connection in self.state.connections:
-                try:
-                    self.serversocket.sendto( self.state.make_packet(
-                        pygame.time.get_ticks() ), connection )
+                try: self.serversocket.sendto( worldstate, connection )
                 except: pass
             self.state.prune_clients()
 
