@@ -16,11 +16,13 @@ class game:
         self.clock = pygame.time.Clock()
         self.lasttick = -1
         self.receivedstate = ""
-        self.screen = pygame.display.set_mode(( self.SCREEN_WIDTH, self.SCREEN_HEIGHT ))
-        self.ballimage = pygame.image.load( "ball.gif" )
-        self.players = []
+        self.screen = pygame.display.set_mode(( self.SCREEN_WIDTH,
+                                                self.SCREEN_HEIGHT ))
+        self.hero1_image = pygame.image.load( "hero1.png" )
+        self.hero2_image = pygame.image.load( "hero2.png" )
+        #self.players = []
         self.keystate = ""
-        self.gamestate = Gamestate()
+        self.state = Gamestate()
         try:
             self.serveraddress = sys.argv[1]
             self.serverport = int( sys.argv[2] )
@@ -41,13 +43,17 @@ class game:
 
     def draw( self ):
         self.screen.fill(( 0, 0, 0 ))
-        for player in self.gamestate.players:
-            self.screen.blit( self.ballimage, ( player.x_position,
-                                                player.y_position ))
+        for player in self.state.players:
+            if player.mode == 1: image = self.hero1_image
+            if player.mode == 2: image = self.hero2_image
+
+            self.screen.blit( image, ( player.x_position,
+                                       player.y_position ))
         pygame.display.flip()
         
     def handle_input( self, buttons ):
-        self.keystate = struct.pack( 'i????',
+        self.keystate = struct.pack( 'ci????',
+            'k',
             pygame.time.get_ticks(),
             buttons[pygame.K_UP],
             buttons[pygame.K_DOWN],
@@ -65,6 +71,22 @@ class game:
                 if event.type == pygame.QUIT: self.quit = True
                 elif event.type == pygame.KEYDOWN:
                     self.handle_keydown( event.key )
+            if self.state.local_player == 0:
+                self.clientsocket.sendto( "j",
+                    ( self.serveraddress, self.serverport ))
+                # send join packet
+                # listen for join packet
+                try:
+                    self.receivedstate, self.server = \
+                        self.clientsocket.recvfrom( 256 )
+                except socket.error, e:
+                    if e.args[0] == errno.EWOULDBLOCK: pass
+                    else: print "Socket Error: %s" % e
+                if len( self.receivedstate ) == 0: continue
+                if self.receivedstate[0] == 'j':
+                    packet = struct.unpack( 'ci', self.receivedstate )
+                    self.state.local_player = packet[1]
+                continue
             self.handle_input( pygame.key.get_pressed() )
             self.clientsocket.sendto( self.keystate,
                 ( self.serveraddress, self.serverport ))
@@ -74,7 +96,9 @@ class game:
             except socket.error, e:
                 if e.args[0] == errno.EWOULDBLOCK: pass
                 else: print "Socket Error: %s" % e
-            self.gamestate.handle_worldstate( self.receivedstate )
+            if len( self.receivedstate ) == 0: continue 
+            if self.receivedstate[0] == 'w':
+                self.state.handle_worldstate( self.receivedstate )
             self.draw()
         pygame.quit()
         sys.exit()

@@ -5,9 +5,13 @@ class Gamestate:
     def __init__( self ):
         self.lasttick = 0
         self.players = []
+        self.local_player = 0
 
     def add_player( self, number ):
         self.players.append( Player( number, None ))
+        for player in self.players:
+            if player.number == self.local_player:
+                player.mode = 2
 
     def del_player( self, number ):
         for player in self.players:
@@ -16,6 +20,7 @@ class Gamestate:
 
     def handle_worldstate( self, packet ):
         n = Player.packet_size()
+        packet = packet[1:]
         if len( packet ) % n != 0: return
         for player in self.players: player.valid = False
         for key, value in enumerate( \

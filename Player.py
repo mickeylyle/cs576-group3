@@ -17,6 +17,7 @@ class Player:
         self.idle_time = 0
         self.number = number
         self.valid = True
+        self.mode = 1
 
     def make_packet( self ):
         return struct.pack( self.packet_format, self.number, self.last_tick,

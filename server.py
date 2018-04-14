@@ -50,8 +50,16 @@ class gameserver:
                     if e.args[0] == errno.EWOULDBLOCK: break
                     else: print "Socket Error: %s" % e
                 if self.receivedstate is not None:
-                    self.state.handle_keystate( self.clientaddress,
-                                                  self.receivedstate )
+                    if self.receivedstate[0] == 'k':
+                        self.state.handle_keystate( self.clientaddress,
+                                                    self.receivedstate )
+                    elif self.receivedstate[0] == 'j':
+                        playerid = self.state.handle_join( self.clientaddress,
+                                                self.receivedstate )
+                        if playerid != 0:
+                            self.serversocket.sendto(
+                                struct.pack( 'ci', 'j', playerid),
+                                self.clientaddress )
             worldstate = self.state.make_packet( pygame.time.get_ticks() )
             for connection in self.state.connections:
                 try: self.serversocket.sendto( worldstate, connection )

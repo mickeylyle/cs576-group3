@@ -11,9 +11,11 @@ class Serverstate:
         self.id_counter = 0
 
     def add_client( self, address ):
-        if self.id_counter > 9: return
+        self.connections.append( address )
         self.players.append( Player( self.id_counter, address ))
+        print "player %s joined" % str( address )
         self.id_counter += 1
+        return self.id_counter - 1
 
     def del_client( self, address ):
         for player in self.players:
@@ -22,21 +24,30 @@ class Serverstate:
                 self.connections.remove( address )
                 self.players.remove( player )
 
+    def handle_join( self, address, packet ):
+        if address not in self.connections and address is not None:
+            return self.add_client( address )
+        elif address is not None:
+            for player in self.players:
+                if player.address == address:
+                    return player.number
+        return 0
+
     def handle_keystate( self, address, packet ):
         if address not in self.connections and address is not None:
             self.add_client( address )
             self.connections.append( address )
             print "player %s joined" % str( address )
-        state = struct.unpack( 'i????', packet )
-        last_tick = state[0]
+        state = struct.unpack( 'ci????', packet )
+        last_tick = state[1]
         for player in self.players:
             if player.address == address and last_tick > player.last_tick:
                 player.last_tick = last_tick
                 player.idle_time = 0
-                if state[1]: player.y_position -= self.player_speed
-                if state[2]: player.y_position += self.player_speed
-                if state[3]: player.x_position -= self.player_speed
-                if state[4]: player.x_position += self.player_speed
+                if state[2]: player.y_position -= self.player_speed
+                if state[3]: player.y_position += self.player_speed
+                if state[4]: player.x_position -= self.player_speed
+                if state[5]: player.x_position += self.player_speed
 
     def idle_time( self ):
         for player in self.players:
@@ -48,7 +59,7 @@ class Serverstate:
                 self.del_client( player.address )
 
     def make_packet( self, tick ):
-        packet = ""
+        packet = "w"
         for player in self.players:
             packet += player.make_packet()
         return packet
