@@ -14,10 +14,15 @@ class gameserver:
         self.receivedstate = None
         signal.signal( signal.SIGTERM, self.handler )
         signal.signal( signal.SIGINT, self.handler )
-        try:
-            self.serveraddress = sys.argv[1]
-            self.serverport = int( sys.argv[2] )
-        except: self.printusage()
+        try: self.serveraddress = sys.argv[1]
+        except:
+            print "using localhost for server address"
+            self.serveraddress = "localhost"
+
+        try: self.serverport = int( sys.argv[2] )
+        except:
+            print "using 6112 for server port"
+            self.serverport = 6112
         try:
             self.serversocket = socket.socket( socket.AF_INET,
                                                socket.SOCK_DGRAM )
@@ -29,13 +34,6 @@ class gameserver:
 
     def handler( self, signum, frame ):
         self.runloop = False
-
-    def printusage( self ):
-        print "Usage: server.py address port"
-        print "  address is the adddress the server binds to, usually localhost"
-        print "  port is the port to listen on for client connections"
-        print "  server runs until killed or interrupted"
-        exit( 1 )
 
     def loop( self ):
         while self.runloop:
@@ -60,6 +58,7 @@ class gameserver:
                             self.serversocket.sendto(
                                 struct.pack( 'ci', 'j', playerid),
                                 self.clientaddress )
+            self.state.update()
             worldstate = self.state.make_packet( pygame.time.get_ticks() )
             for connection in self.state.connections:
                 try: self.serversocket.sendto( worldstate, connection )

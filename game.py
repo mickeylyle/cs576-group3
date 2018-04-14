@@ -10,8 +10,8 @@ from Gamestate import Gamestate
 
 class game:
     def __init__( self ):
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        self.SCREEN_WIDTH = 1000
+        self.SCREEN_HEIGHT = 1000
         self.quit = False
         self.clock = pygame.time.Clock()
         self.lasttick = -1
@@ -20,13 +20,19 @@ class game:
                                                 self.SCREEN_HEIGHT ))
         self.hero1_image = pygame.image.load( "hero1.png" )
         self.hero2_image = pygame.image.load( "hero2.png" )
+        self.PLAYER_HEIGHT = self.hero1_image.get_height()
+        self.level_image = pygame.image.load( "level.png" )
         #self.players = []
         self.keystate = ""
         self.state = Gamestate()
-        try:
-            self.serveraddress = sys.argv[1]
-            self.serverport = int( sys.argv[2] )
-        except: self.printusage()
+        try: self.serveraddress = sys.argv[1]
+        except:
+            print "using localhost for server address"
+            self.serveraddress = "localhost"
+        try: self.serverport = int( sys.argv[2] )
+        except:
+            print "using 6112 for server port"
+            self.serverport = 6112
         try:
             self.clientsocket = socket.socket( socket.AF_INET,
                                                socket.SOCK_DGRAM )
@@ -43,12 +49,13 @@ class game:
 
     def draw( self ):
         self.screen.fill(( 0, 0, 0 ))
+        self.screen.blit( self.level_image, ( 0, 0) )
         for player in self.state.players:
             if player.mode == 1: image = self.hero1_image
             if player.mode == 2: image = self.hero2_image
 
             self.screen.blit( image, ( player.x_position,
-                                       player.y_position ))
+                                       player.y_position - self.PLAYER_HEIGHT ))
         pygame.display.flip()
         
     def handle_input( self, buttons ):

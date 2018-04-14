@@ -12,12 +12,15 @@ class Player:
             ( address, number )
         self.x_position = 100
         self.y_position = 100
+        self.x_velocity = 0.0
+        self.y_velocity = 0.0
         self.address = address
         self.last_tick = -1
         self.idle_time = 0
         self.number = number
         self.valid = True
         self.mode = 1
+        self.standing = False
 
     def make_packet( self ):
         return struct.pack( self.packet_format, self.number, self.last_tick,
