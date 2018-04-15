@@ -1,7 +1,7 @@
 import struct
 
 class Player:
-    packet_format = "iiff"
+    packet_format = "iiffi"
 
     @staticmethod
     def packet_size():
@@ -19,12 +19,12 @@ class Player:
         self.idle_time = 0
         self.number = number
         self.valid = True
-        self.mode = 1
+        self.mode = 0
         self.standing = False
 
     def make_packet( self ):
         return struct.pack( self.packet_format, self.number, self.last_tick,
-                            self.x_position, self.y_position )
+                            self.x_position, self.y_position, self.mode )
 
     def handle_packet( self, packet ):
         state = struct.unpack( self.packet_format, packet )
@@ -34,4 +34,5 @@ class Player:
             self.last_tick = state[1]
             self.x_position = state[2]
             self.y_position = state[3]
+            self.mode = state[4]
         return True

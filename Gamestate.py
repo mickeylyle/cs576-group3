@@ -9,9 +9,6 @@ class Gamestate:
 
     def add_player( self, number ):
         self.players.append( Player( number, None ))
-        for player in self.players:
-            if player.number == self.local_player:
-                player.mode = 2
 
     def del_player( self, number ):
         for player in self.players:

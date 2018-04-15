@@ -14,10 +14,11 @@ class game:
         self.clock = pygame.time.Clock()
         self.lasttick = -1
         self.receivedstate = ""
+        self.hero0_image = pygame.image.load( "hero0.png" )
         self.hero1_image = pygame.image.load( "hero1.png" )
         self.hero2_image = pygame.image.load( "hero2.png" )
-        self.PLAYER_HEIGHT = self.hero1_image.get_height()
-        self.PLAYER_WIDTH = self.hero1_image.get_width()
+        self.PLAYER_HEIGHT = self.hero0_image.get_height()
+        self.PLAYER_WIDTH = self.hero0_image.get_width()
         self.PLAYER_HWIDTH = self.PLAYER_WIDTH / 2
         self.level_image = pygame.image.load( "level.png" )
         self.SCREEN_WIDTH = self.level_image.get_width()
@@ -54,6 +55,7 @@ class game:
         self.screen.fill(( 0, 0, 0 ))
         self.screen.blit( self.level_image, ( 0, 0) )
         for player in self.state.players:
+            if player.mode == 0: image = self.hero0_image
             if player.mode == 1: image = self.hero1_image
             if player.mode == 2: image = self.hero2_image
 
