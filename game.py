@@ -10,21 +10,24 @@ from Gamestate import Gamestate
 
 class game:
     def __init__( self ):
-        self.SCREEN_WIDTH = 1000
-        self.SCREEN_HEIGHT = 1000
         self.quit = False
         self.clock = pygame.time.Clock()
         self.lasttick = -1
         self.receivedstate = ""
-        self.screen = pygame.display.set_mode(( self.SCREEN_WIDTH,
-                                                self.SCREEN_HEIGHT ))
         self.hero1_image = pygame.image.load( "hero1.png" )
         self.hero2_image = pygame.image.load( "hero2.png" )
         self.PLAYER_HEIGHT = self.hero1_image.get_height()
+        self.PLAYER_WIDTH = self.hero1_image.get_width()
+        self.PLAYER_HWIDTH = self.PLAYER_WIDTH / 2
         self.level_image = pygame.image.load( "level.png" )
-        #self.players = []
+        self.SCREEN_WIDTH = self.level_image.get_width()
+        self.SCREEN_HEIGHT = self.level_image.get_height()
         self.keystate = ""
         self.state = Gamestate()
+
+        self.screen = pygame.display.set_mode(( self.SCREEN_WIDTH,
+                                                self.SCREEN_HEIGHT ))
+
         try: self.serveraddress = sys.argv[1]
         except:
             print "using localhost for server address"
@@ -54,7 +57,7 @@ class game:
             if player.mode == 1: image = self.hero1_image
             if player.mode == 2: image = self.hero2_image
 
-            self.screen.blit( image, ( player.x_position,
+            self.screen.blit( image, ( player.x_position - self.PLAYER_HWIDTH,
                                        player.y_position - self.PLAYER_HEIGHT ))
         pygame.display.flip()
         
@@ -97,15 +100,16 @@ class game:
             self.handle_input( pygame.key.get_pressed() )
             self.clientsocket.sendto( self.keystate,
                 ( self.serveraddress, self.serverport ))
-            try:
-                self.receivedstate, self.server = \
-                    self.clientsocket.recvfrom( 256 )
-            except socket.error, e:
-                if e.args[0] == errno.EWOULDBLOCK: pass
-                else: print "Socket Error: %s" % e
-            if len( self.receivedstate ) == 0: continue 
-            if self.receivedstate[0] == 'w':
-                self.state.handle_worldstate( self.receivedstate )
+            while True:
+                try:
+                    self.receivedstate, self.server = \
+                        self.clientsocket.recvfrom( 256 )
+                except socket.error, e:
+                    if e.args[0] == errno.EWOULDBLOCK: break
+                    else: print "Socket Error: %s" % e
+                if len( self.receivedstate ) == 0: continue 
+                if self.receivedstate[0] == 'w':
+                    self.state.handle_worldstate( self.receivedstate )
             self.draw()
         pygame.quit()
         sys.exit()

@@ -6,39 +6,54 @@ class Serverstate:
     def __init__( self ):
         self.lasttick = 0
         self.player_speed = 0.1
-        self.player_max_speed = 1
+        self.player_max_speed = 5
+        self.gravity = .2
+        self.jump_power = 12
         self.players = []
         self.connections = []
         self.idle_limit = 60
         self.id_counter = 1
         self.level_image = pygame.image.load( "level.png" )
+        self.LEVEL_WIDTH = self.level_image.get_width()
+        self.LEVEL_HEIGHT = self.level_image.get_height()
+        self.player_image = pygame.image.load( "hero1.png" )
+        self.PLAYER_WIDTH = self.player_image.get_width()
+        self.PLAYER_HWIDTH = self.PLAYER_WIDTH / 2
 
     def update( self ):
         for player in self.players:
-            # move player
+            # move player sideways
             player.x_position += player.x_velocity
+            # check sideways boundary
+            if player.x_position < self.PLAYER_HWIDTH:
+                player.x_position = self.PLAYER_HWIDTH
+            elif player.x_position > self.LEVEL_WIDTH - self.PLAYER_HWIDTH:
+                player.x_position = self.LEVEL_WIDTH - self.PLAYER_HWIDTH
+            # fall
             if player.y_velocity < 0:
                 player.y_position += player.y_velocity
-                player.y_velocity *= 0.9
-            # boundary collision
-            if player.x_position < 1: player.x_position = 1
-            if player.x_position > 949: player.x_position = 949
-            if player.y_position > 998:
-                player.y_position = 998
-                player.standing = True
-            if player.standing == False:
-                pcolor = self.level_image.get_at(( int( player.x_position ),
-                                                   int( player.y_position ) ))
-                bcolor = self.level_image.get_at(( int( player.x_position ),
-                   int( player.y_position ) + 1 ))
-                if pcolor.r >= bcolor.r:
-                    player.y_position += player.y_velocity
-                    player.y_velocity += self.player_speed
-                    if player.y_velocity > self.player_max_speed:
-                        player.y_velocity = self.player_max_speed
-                else:
+                player.y_velocity += self.gravity
+                continue
+            player.y_velocity += self.gravity
+            fall_distance = player.y_velocity
+            for i in range( 0, int( fall_distance )):
+                if int( player.y_position ) == self.LEVEL_HEIGHT - 1:
+                    player.y_velocity = 0
+                    player.standing = True
+                    break
+                if player.y_position < 0:
+                    player.y_position += 1
+                    continue
+                pcolor = self.level_image.get_at((
+                    int( player.x_position ), int( player.y_position )))
+                bcolor = self.level_image.get_at((
+                    int( player.x_position ), int( player.y_position + 1 )))
+                if pcolor.r < bcolor.r:
                     player.standing = True
                     player.y_velocity = 0
+                    break
+                # move them each pixel down as needed checking as you go
+                player.y_position += 1
 
     def add_client( self, address ):
         self.connections.append( address )
@@ -75,10 +90,12 @@ class Serverstate:
                 player.last_tick = last_tick
                 player.idle_time = 0
                 if state[2] and player.standing:
-                    player.y_velocity -= self.player_speed * 100
+                    player.y_velocity -= self.jump_power
                     player.standing = False
-                # TODO: implement dropping using down key
-                #if state[3]: player.y_velocity += self.player_speed
+                if state[3]:
+                    if player.standing and \
+                        int( player.y_position ) < self.LEVEL_HEIGHT - 1:
+                        player.y_position += 1
                 if state[4]: player.x_velocity -= self.player_speed
                 elif player.x_velocity < 0:
                     player.x_velocity *= 0.9
@@ -89,10 +106,6 @@ class Serverstate:
                     player.x_velocity = self.player_max_speed
                 if player.x_velocity < self.player_max_speed * -1:
                     player.x_velocity = self.player_max_speed * -1
-                if player.y_velocity > self.player_max_speed:
-                    player.y_velocity = self.player_max_speed
-                if player.y_velocity < self.player_max_speed * -1:
-                    player.y_velocity = self.player_max_speed * -1
 
     def idle_time( self ):
         for player in self.players:
