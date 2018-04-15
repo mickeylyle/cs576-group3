@@ -5,9 +5,9 @@ from Player import Player
 class Serverstate:
     def __init__( self ):
         self.lasttick = 0
-        self.player_speed = 0.1
+        self.player_speed = 0.2
         self.player_max_speed = 5
-        self.gravity = .2
+        self.gravity = 0.2
         self.jump_power = 12
         self.players = []
         self.connections = []
@@ -125,6 +125,7 @@ class Serverstate:
                     if player.standing and \
                         int( player.y_position ) < self.LEVEL_HEIGHT - 1:
                         player.y_position += 1
+                        player.standing = False
                 if state[4] and player.mode != 1:
                     player.x_velocity -= self.player_speed
                 elif player.x_velocity < 0:
