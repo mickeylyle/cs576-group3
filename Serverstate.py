@@ -73,6 +73,7 @@ class Serverstate:
                         player.mode = 0
                         otherplayer.mode = 1
                         self.tagback_cooldown = self.tagback_cooldown_value
+                        break
 
     def add_client( self, address ):
         self.connections.append( address )
